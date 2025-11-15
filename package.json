@@ -3,11 +3,23 @@
   "version": "1.0.0",
   "description": "Generate type-safe TypeScript clients from OpenAPI specifications",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "bin": {
+    "openapi-typescript-client-generator": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "generate": "tsx src/cli.ts",
-    "dev": "tsx watch src/cli.ts"
+    "dev": "tsx watch src/cli.ts",
+    "test:e2e": "tsx tests/e2e/run-e2e.ts"
   },
   "keywords": [
     "openapi",

@@ -1,4 +1,8 @@
-// Test the generated client to verify it works
+// -----------------------------------------------------------------------------
+// Lightweight smoke-tests for the generated Pet Store client. The emphasis here
+// is on demonstrating TypeScript's compile-time guarantees rather than making
+// live network calls, so the comments explain what each step validates.
+// -----------------------------------------------------------------------------
 import { PetStoreAPIClient } from './generated/test-client.js';
 
 // Test 1: Client instantiation

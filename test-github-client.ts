@@ -1,4 +1,8 @@
-// Test the generated GitHub-style API client
+// -----------------------------------------------------------------------------
+// Scenario-based walkthrough for the GitHub-flavored client. This file mirrors
+// the questions reviewers typically ask (path params, enums, nested payloads,
+// interceptors, error typing) so we can narrate each capability live.
+// -----------------------------------------------------------------------------
 import { GitHubAPIClient } from './generated/github-client.js';
 
 console.log(' Testing Generated GitHub API Client\n');
