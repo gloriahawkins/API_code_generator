@@ -208,7 +208,9 @@ export class OpenAPIParser {
   }
 
   /**
-   * Get base URL from servers
+   * Returns the preferred base URL declared in the spec. We follow the
+   * conventional “first server wins” approach and fall back to a placeholder so
+   * the generated client still compiles even when no servers are defined.
    */
   public getBaseUrl(): string {
     if (this.spec.servers && this.spec.servers.length > 0) {
@@ -218,7 +220,8 @@ export class OpenAPIParser {
   }
 
   /**
-   * Get all schemas
+   * Provide read-only access to the schema map so the generator can ask for
+   * definitions while preserving the parser’s responsibility of resolving refs.
    */
   public getSchemas(): Map<string, Schema> {
     return this.schemas;

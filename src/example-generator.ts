@@ -2,17 +2,37 @@ import type { Endpoint } from './types.js';
 import { OpenAPIParser } from './parser.js';
 
 /**
- * Generates example usage files showing how to use the generated client
+ * Produces the `*-example.ts` companion file that mirrors the generated client API.
+ *
+ * This is intentionally high-level sample code, but the added comments explain
+ * why we emit certain scaffolding:
+ * - Showing interceptors/auth/retry mirrors the runtime hooks present in the client.
+ * - Sampling only the first few endpoints keeps the file approachable while still
+ *   teaching the ergonomics.
  */
 export class ExampleGenerator {
   private parser: OpenAPIParser;
   private className: string;
 
+  /**
+   * @param parser Reuse the already-instantiated parser so we operate on the
+   *               exact same endpoint list as the main generator.
+   * @param className The class emitted by the generator—used for imports and
+   *                  instantiation to keep filenames/types in sync.
+   */
   constructor(parser: OpenAPIParser, className: string) {
     this.parser = parser;
     this.className = className;
   }
 
+  /**
+   * Build the entire example file as a single template literal string.
+   *
+   * Steps:
+   * 1. Pull out endpoints/base URL so the example matches the spec.
+   * 2. Emit boilerplate that mirrors the generated client's configuration API.
+   * 3. Append per-endpoint snippets for the first three endpoints to avoid noise.
+   */
   public generate(): string {
     const endpoints = this.parser.extractEndpoints();
     const baseUrl = this.parser.getBaseUrl();
@@ -72,6 +92,13 @@ examples().catch(console.error);
     return code;
   }
 
+  /**
+   * Emit a heavily commented usage example for a single endpoint.
+   *
+   * Rather than attempting to be 100% accurate about every edge case, the
+   * example intentionally demonstrates the core ergonomics reviewers care about:
+   * path params, query params, request bodies, and discriminated-union handling.
+   */
   private generateEndpointExample(endpoint: Endpoint): string {
     const methodName = this.sanitizeMethodName(endpoint.operationId);
     const pathParams = endpoint.parameters.filter((p) => p.in === 'path');
@@ -125,6 +152,10 @@ examples().catch(console.error);
     return example;
   }
 
+  /**
+   * Keep the example aligned with however the generator sanitized names.
+   * This mirrors the helper inside the generator so we do not drift.
+   */
   private sanitizeMethodName(name: string): string {
     return name
       .replace(/[^a-zA-Z0-9]/g, '_')

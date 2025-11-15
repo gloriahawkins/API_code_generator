@@ -105,7 +105,6 @@ export class TypeScriptClientGenerator {
  * - Compile-time validation
  * - Type-safe error handling with discriminated unions
  * - Request/response interceptors
- * - Runtime validation with Zod
  * - Automatic retry logic with exponential backoff
  */
 
@@ -490,6 +489,11 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return code;
   }
 
+  /**
+   * Emit a constructor that accepts optional configuration values. During a
+   * walkthrough, it's useful to call out that this mirrors the fluent setter
+   * methods, so the comment explicitly states which knobs can be set up front.
+   */
   private generateConstructor(): string {
     return this.indent() + `constructor(config?: {\n` +
       this.indent(2) + `baseUrl?: string;\n` +
@@ -504,6 +508,11 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
       this.indent() + `}\n\n`;
   }
 
+  /**
+   * Document the intent of the authentication helpers so it is obvious that the
+   * client supports both API keys and bearer tokens without needing to inspect
+   * the generated output.
+   */
   private generateAuthMethods(): string {
     return this.indent() + `/**\n` +
       this.indent() + ` * Set API key for authentication\n` +
@@ -519,6 +528,11 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
       this.indent() + `}\n\n`;
   }
 
+  /**
+   * Request/response interceptors are a major selling point. This helper emits
+   * both mutators plus rich comments so reviewers understand how to hook into
+   * the pipeline.
+   */
   private generateInterceptorMethods(): string {
     return this.indent() + `/**\n` +
       this.indent() + ` * Add a request interceptor\n` +
@@ -544,6 +558,11 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
       this.indent() + `}\n\n`;
   }
 
+  /**
+   * Provide a dedicated method for tuning retries (rather than forcing direct
+   * property access). The comment makes it clear that retries default to
+   * exponential backoff tuned via `maxRetries`/`retryDelay`.
+   */
   private generateRetryMethods(): string {
     return this.indent() + `/**\n` +
       this.indent() + ` * Set retry configuration\n` +
@@ -554,6 +573,11 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
       this.indent() + `}\n\n`;
   }
 
+  /**
+   * Centralizes all network concerns—auth headers, interceptors, retry loop,
+   * and JSON parsing—so each endpoint method can remain tiny. The walkthrough
+   * can lean on this explanation to describe the runtime behavior.
+   */
   private generateInternalFetchMethod(): string {
     return this.indent() + `/**\n` +
       this.indent() + ` * Internal fetch method with interceptors, auth, and retry logic\n` +
@@ -629,6 +653,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
    * 
    * @param endpoint - The endpoint to generate a method for
    * @returns Complete method definition as string
+   */
+  /**
+   * Convert a single OpenAPI endpoint into a strongly typed method, including
+   * docs, generics, runtime plumbing, and discriminated-union return types.
    */
   private generateEndpointMethod(endpoint: Endpoint): string {
     // Convert operationId to a valid TypeScript method name
@@ -726,6 +754,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return method;
   }
 
+  /**
+   * Emit the multi-line JSDoc that ships with every endpoint method so callers
+   * understand the parameters and see a runnable example.
+   */
   private generateJSDoc(
     endpoint: Endpoint,
     pathParams: Parameter[],
@@ -802,6 +834,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return doc;
   }
 
+  /**
+   * Determine whether the responses table includes explicit error status codes
+   * so we can surface that information in the `ApiResult` generic.
+   */
   private extractErrorTypes(
     responses: Record<string, { description: string; content?: Record<string, { schema?: Schema }> }>
   ): string | null {
@@ -814,6 +850,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return errorStatuses.join(' | ');
   }
 
+  /**
+   * Produce a literal object type for path parameters (or a `never`-ish record
+   * if none exist) so the generated method signatures read cleanly.
+   */
   private generatePathParamsType(
     params: Parameter[],
     _path: string
@@ -832,6 +872,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return `{ ${props} }`;
   }
 
+  /**
+   * Similar to path params but marks optional keys appropriately, which keeps
+   * the generated method signature ergonomic.
+   */
   private generateQueryParamsType(params: Parameter[]): string {
     if (params.length === 0) return 'Record<string, never>';
 
@@ -848,6 +892,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return `{ ${props} }`;
   }
 
+  /**
+   * Currently we only emit JSON bodies—this helper isolates that decision so
+   * future enhancements (form data, etc.) have a clear entry point.
+   */
   private extractRequestBodyType(requestBody: RequestBody): string {
     const content = requestBody.content;
     if (content['application/json']?.schema) {
@@ -859,6 +907,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return 'unknown';
   }
 
+  /**
+   * Grab the success payload type from the responses table, defaulting to
+   * `unknown` when the spec does not return JSON (e.g., 204 No Content).
+   */
   private extractResponseType(
     responses: Record<string, { description: string; content?: Record<string, { schema?: Schema }> }>
   ): string {
@@ -875,6 +927,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return 'unknown';
   }
 
+  /**
+   * Build a template literal that stitches together the base URL and path
+   * parameters. The comments explain why `URLSearchParams` is handled elsewhere.
+   */
   private generateUrlConstruction(path: string, pathParams: Parameter[]): string {
     if (pathParams.length === 0) {
       return this.indent() + `const url = \`\${this.baseUrl}${path}\`;\n`;
@@ -885,6 +941,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return this.indent() + `const url = \`\${this.baseUrl}${templatePath}\`;\n`;
   }
 
+  /**
+   * Shared runtime snippet that handles query serialization, invocation of the
+   * internal fetch helper, and consistent `ApiResult` wrapping.
+   */
   private generateAdvancedFetchCall(
     method: string,
     queryParams: Parameter[],
@@ -946,6 +1006,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     return code;
   }
 
+  /**
+   * Convert arbitrary `operationId` strings into safe method names. The same
+   * helper is reused by the example generator to keep output synchronized.
+   */
   private sanitizeMethodName(name: string): string {
     return name
       .replace(/[^a-zA-Z0-9]/g, '_')
@@ -954,6 +1018,10 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
       .toLowerCase();
   }
 
+  /**
+   * Lifted into a public helper so the CLI/example generator can reuse the
+   * class name logic (ensuring both files import/instantiate the same symbol).
+   */
   public generateClassName(): string {
     const info = this.parser['spec'].info;
     return (
@@ -963,10 +1031,18 @@ export type ResponseInterceptor<T = unknown> = (response: Response, data: T) => 
     );
   }
 
+  /**
+   * Keep the default export in addition to the named class export—most users
+   * will `import { Foo }` but the default mirrors historical behavior.
+   */
   private generateExports(className: string): string {
     return `export default ${className};\n`;
   }
 
+  /**
+   * Helper for managing indentation that keeps nested template literals
+   * readable—passing an explicit level is handy when emitting multi-line blocks.
+   */
   private indent(level?: number): string {
     const lvl = level !== undefined ? level : this.indentLevel;
     return this.indentStr.repeat(lvl);

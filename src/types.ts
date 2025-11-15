@@ -55,6 +55,10 @@ export interface OpenAPISpec {
   };
 }
 
+/**
+ * Represents the set of HTTP operations allowed on a single path entry.
+ * Each optional property corresponds to the HTTP verbs we currently support.
+ */
 export interface PathItem {
   get?: Operation;
   post?: Operation;
@@ -64,6 +68,11 @@ export interface PathItem {
   parameters?: Parameter[];
 }
 
+/**
+ * A single HTTP operation pulled straight from the OpenAPI document. This is
+ * the authoritative source of request/response metadata that the parser lifts
+ * into higher-level Endpoint objects.
+ */
 export interface Operation {
   operationId?: string;
   summary?: string;
@@ -74,6 +83,11 @@ export interface Operation {
   tags?: string[];
 }
 
+/**
+ * Normalized representation of an operation that the generator consumes. The
+ * parser flattens shared parameters and ensures every endpoint has an
+ * `operationId`, making code generation dramatically simpler.
+ */
 export interface Endpoint {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   path: string;
@@ -86,6 +100,11 @@ export interface Endpoint {
   tags?: string[];
 }
 
+/**
+ * Definition of a parameter that may appear in the path, query string, headers,
+ * or cookies. We keep the schema optional because OpenAPI allows references or
+ * primitive-only descriptions, and the generator accounts for both cases.
+ */
 export interface Parameter {
   name: string;
   in: 'query' | 'header' | 'path' | 'cookie';
@@ -95,6 +114,11 @@ export interface Parameter {
   style?: string;
 }
 
+/**
+ * Metadata about the request body payload. Most APIs we target rely on
+ * `application/json`, but the union structure allows for other content types in
+ * the future.
+ */
 export interface RequestBody {
   required?: boolean;
   content: Record<string, MediaType>;
@@ -104,6 +128,10 @@ export interface MediaType {
   schema?: Schema;
 }
 
+/**
+ * Minimal representation of an HTTP response declaration from OpenAPI. We only
+ * need the textual description and the schema map for type generation.
+ */
 export interface Response {
   description: string;
   content?: Record<string, MediaType>;

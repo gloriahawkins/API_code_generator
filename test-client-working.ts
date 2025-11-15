@@ -1,4 +1,9 @@
-// Test the generated client - see it actually work!
+// -----------------------------------------------------------------------------
+// High-level integration walkthrough for the demo Pet Store client.
+// This script is intentionally verbose so that during a live walkthrough we can
+// point to each numbered step (instantiation, interceptors, auth, retry, type
+// checks, discriminated unions, method inventory) and describe what it proves.
+// -----------------------------------------------------------------------------
 import { PetStoreAPIClient } from './generated/demo-client.js';
 
 console.log('🧪 Testing Generated TypeScript Client\n');
